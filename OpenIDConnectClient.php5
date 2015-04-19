@@ -200,7 +200,7 @@ if ( DEBUG ) { error_log("authenticate() \$token_json".print_r($token_json,true)
 
             $claims = $this->decodeJWT($token_json->id_token, 1);
 
-if ( DEBUG ) { error_log("authenticate() \$claims".print_r($claims,true)); }
+            if ( DEBUG ) { error_log("authenticate() \$claims".print_r($claims,true)); }
 
 	    // Verify the signature
 	    if ($this->canVerifySignatures()) {
@@ -450,6 +450,14 @@ if ( DEBUG ) { error_log("authenticate() \$claims".print_r($claims,true)); }
      * @return bool
      */
     private function verifyRSAJWTsignature($hashtype, $key, $payload, $signature) {
+        if ( DEBUG ) { 
+            error_log(__METHOD__ . "(\$hashtype, \$key, \$payload, \$signature)" ); 
+
+            error_log(__METHOD__ . "\$hashtype=" . print_r($hashtype,true) ); 
+            error_log(__METHOD__ . "\$key=" . print_r($key,true) ); 
+            error_log(__METHOD__ . "\$payload=" . print_r($payload,true) ); 
+//            error_log(__METHOD__ . "\$signature=" . print_r($signature,true) ); 
+        }
         if (!class_exists('Crypt_RSA')) {
             throw new OpenIDConnectClientException('Crypt_RSA support unavailable.');
         }
@@ -476,6 +484,7 @@ if ( DEBUG ) { error_log("authenticate() \$claims".print_r($claims,true)); }
      * @return bool
      */
     private function verifyJWTsignature($jwt) {
+        if ( DEBUG ) { error_log(__METHOD__ . "($jwt)" ); }
         $parts = explode(".", $jwt);
         $signature = base64url_decode(array_pop($parts));
         $header = json_decode(base64url_decode($parts[0]));
@@ -505,6 +514,14 @@ if ( DEBUG ) { error_log("authenticate() \$claims".print_r($claims,true)); }
      * @return bool
      */
     private function verifyJWTclaims($claims) {
+
+        if ( DEBUG ) { error_log(__METHOD__ . "()" . print_r($claims,true) ); }
+
+        $provider_URL = $this->getProviderURL();
+        $client_id = $this->clientID;
+
+        if ( DEBUG ) { error_log(__METHOD__ . "() Provider URL = $provider_URL" ); }
+        if ( DEBUG ) { error_log(__METHOD__ . "() Client ID = $client_id" ); }
 
         return (($claims->iss == $this->getProviderURL())
             && (($claims->aud == $this->clientID) || (in_array($this->clientID, $claims->aud)))
