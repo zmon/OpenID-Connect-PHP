@@ -169,6 +169,7 @@ class OpenIDConnectClient
      */
     public function authenticate() {
 
+        if ( DEBUG ) { error_log("authenticate()"); }
         // Do a preemptive check to see if the provider has thrown an error from a previous redirect
         if (isset($_REQUEST['error'])) {
             throw new OpenIDConnectClientException("Error: " . $_REQUEST['error'] . " Description: " . $_REQUEST['error_description']);
@@ -176,9 +177,12 @@ class OpenIDConnectClient
 
         // If we have an authorization code then proceed to request a token
         if (isset($_REQUEST["code"])) {
+            if ( DEBUG ) { error_log("authenticate() - has code"); }
 
             $code = $_REQUEST["code"];
             $token_json = $this->requestTokens($code);
+
+if ( DEBUG ) { error_log("authenticate() \$token_json".print_r($token_json,true)); }
 
             // Throw an error if the server returns one
             if (isset($token_json->error)) {
@@ -195,6 +199,8 @@ class OpenIDConnectClient
 	    }
 
             $claims = $this->decodeJWT($token_json->id_token, 1);
+
+if ( DEBUG ) { error_log("authenticate() \$claims".print_r($claims,true)); }
 
 	    // Verify the signature
 	    if ($this->canVerifySignatures()) {
@@ -222,6 +228,7 @@ class OpenIDConnectClient
             }
 
         } else {
+            if ( DEBUG ) { error_log("authenticate() - DOES NOT have code"); }
 
             $this->requestAuthorization();
             return false;
@@ -253,10 +260,16 @@ class OpenIDConnectClient
      */
     private function getProviderConfigValue($param) {
 
+        if ( DEBUG ) { error_log("getProviderConfigValue($param)"); }
+
         // If the configuration value is not available, attempt to fetch it from a well known config endpoint
         // This is also known as auto "discovery"
         if (!isset($this->providerConfig[$param])) {
+
             $well_known_config_url = rtrim($this->getProviderURL(),"/") . "/.well-known/openid-configuration";
+
+            if ( DEBUG ) { error_log("getProviderConfigValue($param) - setting from $well_known_config_url"); }
+
             $value = json_decode($this->fetchURL($well_known_config_url))->{$param};
 
             if ($value) {
@@ -264,6 +277,12 @@ class OpenIDConnectClient
             } else {
                 throw new OpenIDConnectClientException("The provider {$param} has not been set. Make sure your provider has a well known configuration available.");
             }
+
+            if ( DEBUG ) { error_log("getProviderConfigValue($param) - set value to = " . print_r($this->providerConfig[$param],true)); }
+
+        } else {
+
+            if ( DEBUG ) { error_log("getProviderConfigValue($param) - found value = " . print_r($this->providerConfig[$param],true)); }
 
         }
 
@@ -326,6 +345,8 @@ class OpenIDConnectClient
      */
     private function requestAuthorization() {
 
+    if ( DEBUG ) { error_log("requestAuthorization()"); }
+
         $auth_endpoint = $this->getProviderConfigValue("authorization_endpoint");
         $response_type = "code";
 
@@ -346,6 +367,9 @@ class OpenIDConnectClient
             'state' => $state,
             'scope' => 'openid email'
         ));
+
+
+        if ( DEBUG ) { error_log("requestAuthorization() \$auth_params=" . print_r($auth_params,true)); }
 
         // If the client has been registered with additional scopes
         if (sizeof($this->scopes) > 0) {
@@ -560,6 +584,7 @@ class OpenIDConnectClient
      */
     protected function fetchURL($url, $post_body = null) {
 
+        if ( DEBUG ) { error_log("fetchURL($url,post_body)|" . print_r($post_body,true)."|"); }
 
         // OK cool - then let's create a new cURL resource handle
         $ch = curl_init();
@@ -612,6 +637,8 @@ class OpenIDConnectClient
         // Timeout in seconds
         curl_setopt($ch, CURLOPT_TIMEOUT, 60);
 
+//        if ( DEBUG ) { $curl_info = curl_getinfo( $ch, CURLINFO_EFFECTIVE_URL ); error_log("fetchURL($url, $post_body) - curl info = " . print_r($curl_info,true)); }
+
         // Download the given URL, and return output
         $output = curl_exec($ch);
 
@@ -622,6 +649,7 @@ class OpenIDConnectClient
         // Close the cURL resource, and free system resources
         curl_close($ch);
 
+        if ( DEBUG ) { error_log("fetchURL() returns |" . print_r($output,true)."|"); }
         return $output;
     }
 
