@@ -365,7 +365,7 @@ if ( DEBUG ) { error_log("authenticate() \$token_json".print_r($token_json,true)
             'client_id' => $this->clientID,
             'nonce' => $nonce,
             'state' => $state,
-            'scope' => 'openid email'
+            'scope' => 'openid'
         ));
 
 
